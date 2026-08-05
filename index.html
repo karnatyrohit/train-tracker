@@ -217,7 +217,7 @@
     const RAW_API_URL = `https://realtime.sdmts.com/api/api/gtfs_realtime/trip-updates-for-agency/NCTD.pb?key=${API_KEY}`;
     const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
     const FETCH_URL = CORS_PROXY + encodeURIComponent(RAW_API_URL);
-    const PROTO_URL = "https://raw.githubusercontent.com/MobilityData/gtfs-realtime-bindings/master/gtfs-realtime.proto";
+    const PROTO_URL = "https://cdn.jsdelivr.net/gh/MobilityData/gtfs-realtime-bindings@master/gtfs-realtime.proto";
 
     const commutes = {
       coaster_am: { route: '398', stop: '28100', name: 'COASTER (Southbound): Oceanside ➔ Sorrento Valley', type: 'coaster' },
@@ -262,11 +262,26 @@
       const board = document.getElementById('board');
       
       try {
-        const root = await loadSchema();
+        let root;
+        try {
+          root = await loadSchema();
+        } catch (e) {
+          throw new Error('Schema load failed: ' + e.message);
+        }
+        
         const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
 
-        const response = await fetch(FETCH_URL);
-        if (!response.ok) throw new Error('Network response was not ok');
+        let response;
+        try {
+          response = await fetch(FETCH_URL);
+        } catch (e) {
+          throw new Error('GTFS network fetch failed: ' + e.message);
+        }
+        
+        if (!response.ok) {
+          throw new Error(`GTFS response not ok: ${response.status} ${response.statusText}`);
+        }
+        
         const buffer = await response.arrayBuffer();
 
         const message = FeedMessage.decode(new Uint8Array(buffer));
