@@ -1,338 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>NCTD Tracker</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent-hover: #60a5fa;
-      --success: #10b981;
-      --error: #ef4444;
-      --coaster: #3b82f6;
-      --sprinter: #34d399;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NCTD Real-Time Dashboard</title>
     
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px),
-                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 400px);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 24px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 24px;
-      text-align: center;
-      background: linear-gradient(to right, var(--coaster), var(--sprinter));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .tab-btn {
-      background: rgba(30, 41, 59, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
-      padding: 16px;
-      border-radius: 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tab-btn .train-type {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .tab-btn .time {
-      font-size: 1.1rem;
-      color: var(--text);
-    }
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
     
-    .tab-btn.active.coaster {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.5);
-      color: var(--coaster);
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
-    }
-    
-    .tab-btn.active.sprinter {
-      background: rgba(52, 211, 153, 0.15);
-      border-color: rgba(52, 211, 153, 0.5);
-      color: var(--sprinter);
-      box-shadow: 0 4px 20px rgba(52, 211, 153, 0.2);
-    }
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
 
-    .route-info {
-      text-align: center;
-      margin-bottom: 24px;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      background: rgba(255,255,255,0.03);
-      padding: 12px;
-      border-radius: 12px;
-    }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-    #board {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 500px),
+                radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.15), transparent 500px);
+        }
 
-    .train-card {
-      background: var(--card-bg);
-      border: 1px solid rgba(255,255,255,0.05);
-      padding: 24px;
-      border-radius: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      backdrop-filter: blur(10px);
-      transition: transform 0.2s ease, opacity 0.3s ease;
-      animation: slideUp 0.4s ease forwards;
-    }
-    
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        /* Header Styling */
+        header {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--glass-border);
+            z-index: 10;
+        }
 
-    .route-name { 
-      font-size: 1.1rem; 
-      font-weight: 500; 
-      color: var(--text-muted);
-    }
-    
-    .time { 
-      font-size: 2.5rem; 
-      font-weight: 700; 
-      color: var(--success); 
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-    
-    .time span {
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
 
-    .error, .loading { 
-      text-align: center;
-      padding: 30px;
-      color: var(--text-muted);
-      background: var(--card-bg);
-      border-radius: 20px;
-      font-weight: 500;
-    }
-    
-    .error { color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
-    
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 50%;
-      border-top-color: var(--accent);
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 12px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px;
+            border-radius: 12px;
+            gap: 4px;
+        }
 
-  <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background: var(--glass-bg);
+            color: var(--text-main);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .tab-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tab-content.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Live Map Iframe */
+        .map-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #ffffff; /* The swiftly map is light themed */
+        }
+
+        /* Schedules Tab Styling */
+        .schedule-container {
+            width: 90%;
+            max-width: 600px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .schedule-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .schedule-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-main);
+        }
+
+        .schedule-desc {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            line-height: 1.5;
+        }
+
+        .schedule-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-blue), #2563eb);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-bottom: 16px;
+        }
+        
+        .schedule-btn.sprinter {
+            background: linear-gradient(135deg, var(--accent-green), #059669);
+        }
+
+        .schedule-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .schedule-btn.sprinter:hover {
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 16px;
+            }
+            .nav-tabs {
+                width: 100%;
+                justify-content: space-between;
+            }
+            .tab-btn {
+                flex: 1;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>NCTD Commute Tracker</h1>
-  
-  <div class="tabs">
-    <button class="tab-btn coaster" onclick="selectCommute('coaster_am')">
-      <span class="train-type">Coaster</span>
-      <span class="time">Morning ☀️</span>
-    </button>
-    <button class="tab-btn sprinter" onclick="selectCommute('sprinter_am')">
-      <span class="train-type">Sprinter</span>
-      <span class="time">Morning ☀️</span>
-    </button>
-    <button class="tab-btn coaster" onclick="selectCommute('coaster_pm')">
-      <span class="train-type">Coaster</span>
-      <span class="time">Evening 🌙</span>
-    </button>
-    <button class="tab-btn sprinter" onclick="selectCommute('sprinter_pm')">
-      <span class="train-type">Sprinter</span>
-      <span class="time">Evening 🌙</span>
-    </button>
-  </div>
 
-  <div class="route-info" id="route-info">Select a commute above to view live departures.</div>
-  
-  <div id="board">
-    <div class="loading">Waiting for selection...</div>
-  </div>
+    <header>
+        <h1>NCTD Tracker</h1>
+        <div class="nav-tabs">
+            <button class="tab-btn active" style="color: var(--accent-blue);" onclick="loadRoute('398', this)">COASTER</button>
+            <button class="tab-btn" style="color: var(--accent-green);" onclick="loadRoute('399', this)">SPRINTER</button>
+        </div>
+    </header>
 
-  <script>
-    const API_KEY = 'fb7d93ba-2006-4f04-a9f0-bfce63b2d2d5';
-    const RAW_API_URL = `https://realtime.sdmts.com/api/api/gtfs_realtime/trip-updates-for-agency/NCTD.pb?key=${API_KEY}`;
-    const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
-    const FETCH_URL = CORS_PROXY + encodeURIComponent(RAW_API_URL);
-    const PROTO_URL = "https://cdn.jsdelivr.net/gh/MobilityData/gtfs-realtime-bindings@master/gtfs-realtime.proto";
+    <div class="content-area">
+        <iframe id="mapFrame" class="map-iframe" src="https://live.goswift.ly/nctd/route/398" allow="geolocation"></iframe>
+    </div>
 
-    const commutes = {
-      coaster_am: { route: '398', stop: '28100', name: 'COASTER (Southbound): Oceanside ➔ Sorrento Valley', type: 'coaster' },
-      coaster_pm: { route: '398', stop: '28005', name: 'COASTER (Northbound): Sorrento Valley ➔ Oceanside', type: 'coaster' },
-      sprinter_am: { route: '399', stop: '27029', name: 'SPRINTER (Westbound): Rancho Del Oro ➔ Oceanside', type: 'sprinter' },
-      sprinter_pm: { route: '399', stop: '27000', name: 'SPRINTER (Eastbound): Oceanside ➔ Rancho Del Oro', type: 'sprinter' }
-    };
+    <script>
+        function loadRoute(routeId, btn) {
+            // Update active state
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
 
-    let activeCommute = null;
-    let refreshInterval = null;
-    let cachedRoot = null;
-
-    async function loadSchema() {
-      if (cachedRoot) return cachedRoot;
-      cachedRoot = await protobuf.load(PROTO_URL);
-      return cachedRoot;
-    }
-
-    function selectCommute(id) {
-      activeCommute = commutes[id];
-      
-      // Update UI active states
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('onclick').includes(id)) {
-          btn.classList.add('active');
+            // Update iframe URL
+            document.getElementById('mapFrame').src = `https://live.goswift.ly/nctd/route/${routeId}`;
         }
-      });
-
-      document.getElementById('route-info').innerText = activeCommute.name;
-      document.getElementById('board').innerHTML = '<div class="loading"><div class="spinner"></div><br>Fetching live data...</div>';
-      
-      fetchTrains();
-      
-      if (refreshInterval) clearInterval(refreshInterval);
-      refreshInterval = setInterval(fetchTrains, 60000);
-    }
-
-    async function fetchTrains() {
-      if (!activeCommute) return;
-      
-      const board = document.getElementById('board');
-      
-      try {
-        let root;
-        try {
-          root = await loadSchema();
-        } catch (e) {
-          throw new Error('Schema load failed: ' + e.message);
-        }
-        
-        const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
-
-        let response;
-        try {
-          response = await fetch(FETCH_URL);
-        } catch (e) {
-          throw new Error('GTFS network fetch failed: ' + e.message);
-        }
-        
-        if (!response.ok) {
-          throw new Error(`GTFS response not ok: ${response.status} ${response.statusText}`);
-        }
-        
-        const buffer = await response.arrayBuffer();
-
-        const message = FeedMessage.decode(new Uint8Array(buffer));
-        const data = FeedMessage.toObject(message, { enums: String, defaults: true });
-
-        displayTrains(data.entity);
-      } catch (error) {
-        board.innerHTML = `<div class="error">⚠️ Failed to load data: ${error.message}</div>`;
-      }
-    }
-
-    function displayTrains(entities) {
-      const board = document.getElementById('board');
-      board.innerHTML = '';
-      const currentUnixTime = Math.floor(Date.now() / 1000);
-      let trainsFound = [];
-
-      entities.forEach(entity => {
-        if (entity.tripUpdate && entity.tripUpdate.trip.routeId === activeCommute.route) {
-          const stopUpdate = entity.tripUpdate.stopTimeUpdate.find(stop => stop.stopId === activeCommute.stop);
-          if (stopUpdate && stopUpdate.arrival) {
-            const arrivalTime = stopUpdate.arrival.time;
-            const minutesAway = Math.max(0, Math.floor((arrivalTime - currentUnixTime) / 60));
-            if (minutesAway >= 0) {
-              trainsFound.push(minutesAway);
-            }
-          }
-        }
-      });
-
-      trainsFound.sort((a, b) => a - b);
-
-      if (trainsFound.length === 0) {
-        board.innerHTML = '<div class="error">No upcoming trains found for this route.</div>';
-        return;
-      }
-
-      trainsFound.forEach((minutes, index) => {
-        const div = document.createElement('div');
-        div.className = 'train-card';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-          <div class="route-name">Departing in</div>
-          <div class="time">${minutes} <span>min</span></div>
-        `;
-        board.appendChild(div);
-      });
-    }
-
-    // Default to the first one (Morning COASTER)
-    selectCommute('coaster_am');
-  </script>
+    </script>
 </body>
 </html>
