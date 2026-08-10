@@ -1,354 +1,140 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0f172a">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>NCTD Tracker</title>
-  
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f4c81">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>NCTD Train Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: rgba(30, 41, 59, 0.7);
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
-      --accent: #3b82f6;
-      --accent-hover: #60a5fa;
-      --success: #10b981;
-      --error: #ef4444;
-      --coaster: #3b82f6;
-      --sprinter: #34d399;
-    }
-    
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 400px),
-                        radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.05), transparent 400px);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 24px;
-    }
-
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 24px;
-      text-align: center;
-      background: linear-gradient(to right, var(--coaster), var(--sprinter));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .tabs {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-
-    .tab-btn {
-      background: rgba(30, 41, 59, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-muted);
-      padding: 16px;
-      border-radius: 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tab-btn .train-type {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .tab-btn .time {
-      font-size: 1.1rem;
-      color: var(--text);
-    }
-    
-    .tab-btn.active.coaster {
-      background: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.5);
-      color: var(--coaster);
-      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
-    }
-    
-    .tab-btn.active.sprinter {
-      background: rgba(52, 211, 153, 0.15);
-      border-color: rgba(52, 211, 153, 0.5);
-      color: var(--sprinter);
-      box-shadow: 0 4px 20px rgba(52, 211, 153, 0.2);
-    }
-
-    .route-info {
-      text-align: center;
-      margin-bottom: 24px;
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      background: rgba(255,255,255,0.03);
-      padding: 12px;
-      border-radius: 12px;
-    }
-
-    #board {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .train-card {
-      background: var(--card-bg);
-      border: 1px solid rgba(255,255,255,0.05);
-      padding: 24px;
-      border-radius: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      backdrop-filter: blur(10px);
-      transition: transform 0.2s ease, opacity 0.3s ease;
-      animation: slideUp 0.4s ease forwards;
-    }
-    
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .route-name { 
-      font-size: 1.1rem; 
-      font-weight: 500; 
-      color: var(--text-muted);
-    }
-    
-    .time { 
-      font-size: 2.5rem; 
-      font-weight: 700; 
-      color: var(--success); 
-      display: flex;
-      align-items: baseline;
-      gap: 4px;
-    }
-    
-    .time span {
-      font-size: 1rem;
-      font-weight: 500;
-      color: var(--text-muted);
-    }
-
-    .error, .loading { 
-      text-align: center;
-      padding: 30px;
-      color: var(--text-muted);
-      background: var(--card-bg);
-      border-radius: 20px;
-      font-weight: 500;
-    }
-    
-    .error { color: var(--error); border: 1px solid rgba(239, 68, 68, 0.3); }
-    
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 2px solid rgba(255,255,255,0.1);
-      border-radius: 50%;
-      border-top-color: var(--accent);
-      animation: spin 1s ease-in-out infinite;
-      margin-bottom: 12px;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; color: #1f2937; }
+    header { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: max(10px, env(safe-area-inset-top)) 16px 10px; border-bottom: 1px solid #d1d5db; }
+    h1 { margin: 0; font-size: 1.2rem; }
+    nav { display: flex; gap: 8px; }
+    button { min-height: 44px; padding: 8px 14px; border: 1px solid #9ca3af; border-radius: 4px; background: #fff; color: #1f2937; font: inherit; cursor: pointer; }
+    button[aria-pressed="true"] { border-color: #1d4ed8; background: #1d4ed8; color: #fff; }
+    #map { width: 100%; height: calc(100dvh - 64px); }
+    .notice { position: absolute; z-index: 500; right: 12px; bottom: 12px; padding: 8px 10px; border-radius: 4px; background: #fff; box-shadow: 0 1px 4px #777; font-size: .8rem; }
+    #install { margin-left: auto; }
+    @media (max-width: 480px) { header { flex-wrap: wrap; } h1 { width: 100%; } #install { margin-left: 0; } #map { height: calc(100dvh - 118px); } }
   </style>
-
-  <script src="https://cdn.jsdelivr.net/npm/protobufjs@7.2.5/dist/protobuf.min.js"></script>
 </head>
 <body>
-  <h1>NCTD Commute Tracker</h1>
-  
-  <div class="tabs">
-    <button class="tab-btn coaster" onclick="selectCommute('coaster_am')">
-      <span class="train-type">Coaster</span>
-      <span class="time">Morning ☀️</span>
-    </button>
-    <button class="tab-btn sprinter" onclick="selectCommute('sprinter_am')">
-      <span class="train-type">Sprinter</span>
-      <span class="time">Morning ☀️</span>
-    </button>
-    <button class="tab-btn coaster" onclick="selectCommute('coaster_pm')">
-      <span class="train-type">Coaster</span>
-      <span class="time">Evening 🌙</span>
-    </button>
-    <button class="tab-btn sprinter" onclick="selectCommute('sprinter_pm')">
-      <span class="train-type">Sprinter</span>
-      <span class="time">Evening 🌙</span>
-    </button>
-  </div>
+  <header>
+    <h1>NCTD Train Tracker</h1>
+    <nav aria-label="Train route">
+      <button type="button" data-route="398" aria-pressed="true">COASTER</button>
+      <button type="button" data-route="399" aria-pressed="false">SPRINTER</button>
+    </nav>
+    <button id="install" type="button" hidden>Install</button>
+  </header>
+  <main id="map" aria-label="Selected NCTD train route map"></main>
+  <div class="notice" id="status">Loading live trains…</div>
 
-  <div class="route-info" id="route-info">Select a commute above to view live departures.</div>
-  
-  <div id="board">
-    <div class="loading">Waiting for selection...</div>
-  </div>
-
+  <script src="config.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script>
-    const API_KEY = 'fb7d93ba-2006-4f04-a9f0-bfce63b2d2d5';
-    const RAW_API_URL = `https://realtime.sdmts.com/api/api/gtfs_realtime/trip-updates-for-agency/NCTD.pb?key=${API_KEY}`;
-    const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-    const FETCH_URL = CORS_PROXY + RAW_API_URL;
-    const PROTO_URL = "https://cdn.jsdelivr.net/gh/MobilityData/gtfs-realtime-bindings@master/gtfs-realtime.proto";
-
-    const commutes = {
-      coaster_am: { route: '398', stop: '28100', name: 'COASTER (Southbound): Oceanside ➔ Sorrento Valley', type: 'coaster' },
-      coaster_pm: { route: '398', stop: '28005', name: 'COASTER (Northbound): Sorrento Valley ➔ Oceanside', type: 'coaster' },
-      sprinter_am: { route: '399', stop: '27029', name: 'SPRINTER (Westbound): Rancho Del Oro ➔ Oceanside', type: 'sprinter' },
-      sprinter_pm: { route: '399', stop: '27000', name: 'SPRINTER (Eastbound): Oceanside ➔ Rancho Del Oro', type: 'sprinter' }
+    const API_BASE_URL = (window.NCTD_CONFIG?.apiBaseUrl || window.location.origin).replace(/\/$/, '');
+    const apiUrl = (path) => `${API_BASE_URL}${path}`;
+    const routes = {"398":{"stops":[{"ids":["28004","28104"],"lat":32.994933,"lon":-117.272046,"name":"Solana Beach Station"},{"ids":["28003","28103"],"lat":33.047927,"lon":-117.293357,"name":"Encinitas Station"},{"ids":["28100"],"lat":33.18856,"lon":-117.376487,"name":"Oceanside Transit Center"},{"ids":["28007","28107"],"lat":32.71887,"lon":-117.17007,"name":"San Diego - Santa Fe Depot"},{"ids":["28006","28106"],"lat":32.755277,"lon":-117.199754,"name":"San Diego - Old Town"},{"ids":["28001","28101"],"lat":33.161787,"lon":-117.351867,"name":"Carlsbad Village Station"},{"ids":["28002","28102"],"lat":33.109794,"lon":-117.319613,"name":"Carlsbad Poinsettia Station"},{"ids":["28005","28105"],"lat":32.903369,"lon":-117.225677,"name":"Sorrento Valley Station"},{"ids":["28000"],"lat":33.190552,"lon":-117.378206,"name":"Oceanside Transit Center Platform 3"}],"lines":[[[33.188512,-117.37658],[33.180713,-117.370015],[33.174497,-117.364693],[33.166939,-117.357286],[33.160905,-117.350949],[33.158084,-117.348502],[33.147227,-117.339584],[33.143917,-117.337096],[33.134938,-117.332336],[33.121868,-117.325593],[33.11302,-117.321121],[33.104111,-117.316868],[33.089356,-117.310188],[33.080188,-117.307201],[33.062762,-117.301419],[33.051263,-117.29447],[33.04629,-117.293077],[33.037671,-117.291903],[33.033085,-117.290208],[33.023025,-117.284304],[33.013342,-117.278667],[33.003869,-117.275623],[32.998952,-117.273854],[32.994658,-117.27198],[32.991937,-117.271287],[32.968383,-117.26561],[32.965232,-117.265675],[32.959665,-117.267821],[32.954687,-117.266919],[32.947107,-117.263852],[32.938961,-117.261447],[32.934216,-117.257201],[32.924662,-117.247696],[32.916861,-117.23815],[32.904937,-117.227202],[32.902114,-117.224499],[32.896284,-117.21887],[32.889561,-117.212258],[32.887268,-117.208034],[32.887141,-117.206368],[32.887572,-117.202235],[32.888352,-117.199091],[32.888956,-117.196582],[32.889335,-117.195286],[32.888942,-117.19379],[32.887017,-117.192496],[32.886229,-117.191621],[32.886131,-117.186776],[32.885443,-117.185472],[32.884725,-117.184546],[32.883882,-117.181475],[32.884282,-117.179837],[32.883432,-117.177349],[32.881485,-117.174928],[32.87961,-117.174208],[32.875684,-117.174835],[32.872922,-117.176216],[32.868993,-117.182591],[32.864522,-117.189757],[32.863519,-117.191902],[32.862424,-117.197362],[32.863217,-117.20503],[32.861403,-117.211501],[32.854134,-117.228882],[32.851954,-117.231964],[32.849102,-117.233967],[32.846491,-117.235325],[32.843413,-117.235649],[32.840315,-117.234686],[32.837824,-117.233079],[32.833178,-117.231475],[32.8309,-117.230352],[32.82795,-117.230736],[32.825549,-117.230325],[32.823469,-117.229176],[32.817023,-117.222223],[32.813008,-117.218012],[32.808889,-117.216057],[32.797179,-117.208915],[32.792372,-117.206715],[32.789572,-117.206265],[32.784159,-117.207075],[32.777342,-117.207905],[32.770514,-117.205479],[32.756532,-117.200276],[32.75361,-117.199184],[32.752046,-117.198442],[32.749114,-117.195929],[32.746031,-117.192864],[32.738852,-117.179812],[32.732973,-117.174413],[32.728139,-117.17206],[32.723999,-117.170365],[32.719848,-117.170042],[32.716895,-117.170101]],[[32.71887,-117.170062],[32.723524,-117.170243],[32.726934,-117.171547],[32.732713,-117.174212],[32.738545,-117.179428],[32.745603,-117.192115],[32.747333,-117.194417],[32.751511,-117.198026],[32.75424,-117.199428],[32.755257,-117.199834],[32.767499,-117.204383],[32.776681,-117.207762],[32.780579,-117.207697],[32.788783,-117.206296],[32.791823,-117.206569],[32.796349,-117.208451],[32.808011,-117.215595],[32.81198,-117.217321],[32.815192,-117.22022],[32.822904,-117.228671],[32.824981,-117.230117],[32.827563,-117.230738],[32.830517,-117.2304],[32.83189,-117.230624],[32.837147,-117.232834],[32.839538,-117.234235],[32.842595,-117.235532],[32.845816,-117.23552],[32.848406,-117.234406],[32.851254,-117.232539],[32.85369,-117.229763],[32.861078,-117.212262],[32.863126,-117.206514],[32.862411,-117.198436],[32.863327,-117.192584],[32.864455,-117.189864],[32.868327,-117.183805],[32.872344,-117.176679],[32.874893,-117.175103],[32.879256,-117.174152],[32.881266,-117.174796],[32.883207,-117.176972],[32.884255,-117.179427],[32.883929,-117.181097],[32.884415,-117.183653],[32.885208,-117.185258],[32.886062,-117.186453],[32.886149,-117.191281],[32.886672,-117.192258],[32.888741,-117.193521],[32.889337,-117.195026],[32.889104,-117.196281],[32.888505,-117.198053],[32.887796,-117.201704],[32.887326,-117.203487],[32.887186,-117.207678],[32.887745,-117.209349],[32.894017,-117.216685],[32.901803,-117.22419],[32.90336,-117.22569],[32.915851,-117.237236],[32.922302,-117.244775],[32.933395,-117.256403],[32.938351,-117.261101],[32.945372,-117.263229],[32.953936,-117.266653],[32.959291,-117.267875],[32.964543,-117.265895],[32.967688,-117.265491],[32.98156,-117.268795],[32.994926,-117.272074],[32.997465,-117.273197],[33.003493,-117.275515],[33.01254,-117.278259],[33.020014,-117.282448],[33.032157,-117.289707],[33.036341,-117.29162],[33.047929,-117.29334],[33.050486,-117.294069],[33.060993,-117.300634],[33.074364,-117.305263],[33.088049,-117.309695],[33.094824,-117.31269],[33.110245,-117.319738],[33.120899,-117.325101],[33.132156,-117.33088],[33.143803,-117.337022],[33.146561,-117.339046],[33.156791,-117.347447],[33.161785,-117.35187],[33.166754,-117.357085],[33.171696,-117.362239],[33.178597,-117.368174],[33.186758,-117.375093],[33.190515,-117.37827]]]},"399":{"stops":[{"ids":["27007","27027"],"lat":33.20295,"lon":-117.24495,"name":"Vista Transit Center"},{"ids":["27005","27028"],"lat":33.204546,"lon":-117.288143,"name":"College Blvd Station"},{"ids":["27010"],"lat":33.146953,"lon":-117.185314,"name":"Palomar College Station"},{"ids":["27014"],"lat":33.118419,"lon":-117.09216,"name":"Escondido Transit Center"},{"ids":["27009"],"lat":33.1735,"lon":-117.207393,"name":"Buena Creek Station"},{"ids":["27008","27026"],"lat":33.190535,"lon":-117.237476,"name":"Civic Center - Vista Station"},{"ids":["27003","27030"],"lat":33.199656,"lon":-117.332478,"name":"El Camino Real Station"},{"ids":["27013"],"lat":33.131112,"lon":-117.124154,"name":"Nordahl Rd Station"},{"ids":["27002"],"lat":33.194612,"lon":-117.353514,"name":"Crouch St Station"},{"ids":["27012"],"lat":33.134771,"lon":-117.153585,"name":"Cal State San Marcos Station"},{"ids":["27006"],"lat":33.219553,"lon":-117.259087,"name":"Melrose Dr Station"},{"ids":["27000"],"lat":33.190875,"lon":-117.37835,"name":"Oceanside Transit Center"},{"ids":["27011"],"lat":33.142267,"lon":-117.161995,"name":"San Marcos Civic Center Station"},{"ids":["27001"],"lat":33.181788,"lon":-117.368851,"name":"Coast Hwy Station"},{"ids":["27004","27029"],"lat":33.20146,"lon":-117.31147,"name":"Rancho Del Oro Station"}],"lines":[[[33.118419,-117.092161],[33.119753,-117.095664],[33.122479,-117.102942],[33.123555,-117.105872],[33.129146,-117.120875],[33.131112,-117.124154],[33.135435,-117.129702],[33.138268,-117.134085],[33.138899,-117.137727],[33.139464,-117.139716],[33.138196,-117.141444],[33.137772,-117.145697],[33.136658,-117.148796],[33.134771,-117.153585],[33.134431,-117.155006],[33.135144,-117.156349],[33.141486,-117.158803],[33.141957,-117.160675],[33.145826,-117.178091],[33.146924,-117.18518],[33.147036,-117.185658],[33.152036,-117.194272],[33.158827,-117.198995],[33.162088,-117.199253],[33.163879,-117.199752],[33.164852,-117.201148],[33.165617,-117.20464],[33.167129,-117.205631],[33.170056,-117.204169],[33.171919,-117.203608],[33.173251,-117.204743],[33.173499,-117.207393],[33.173947,-117.209235],[33.179048,-117.216001],[33.182377,-117.218446],[33.183887,-117.223513],[33.185665,-117.225389],[33.187954,-117.227128],[33.189652,-117.22866],[33.190103,-117.230312],[33.19028,-117.234051],[33.189873,-117.236115],[33.190189,-117.237116],[33.191371,-117.237829],[33.194261,-117.238025],[33.197315,-117.241041],[33.203159,-117.244973],[33.204847,-117.246373],[33.205783,-117.249947],[33.206696,-117.251897],[33.212532,-117.253552],[33.217863,-117.254598],[33.219216,-117.255911],[33.219698,-117.258186],[33.218876,-117.262228],[33.213272,-117.269896],[33.211444,-117.270624],[33.20965,-117.274553],[33.208804,-117.278456],[33.204897,-117.287222],[33.203143,-117.29219],[33.202057,-117.308089],[33.201059,-117.314233],[33.20038,-117.3223],[33.200435,-117.326393],[33.19965,-117.332304],[33.199644,-117.337676],[33.197071,-117.348249],[33.194614,-117.353513],[33.190203,-117.36218],[33.188694,-117.363975],[33.185269,-117.365226],[33.18275,-117.366887],[33.181867,-117.368346],[33.181639,-117.369383],[33.182082,-117.37084],[33.190875,-117.378349]],[[33.202992,-117.244863],[33.196126,-117.2402],[33.19399,-117.237862],[33.191069,-117.237776],[33.190399,-117.237376],[33.189882,-117.235687],[33.190243,-117.233475],[33.1901,-117.229956],[33.189139,-117.2282],[33.187545,-117.226374],[33.185125,-117.225148],[33.183755,-117.222531],[33.181806,-117.217675],[33.17851,-117.215602],[33.173632,-117.208411],[33.173495,-117.207337],[33.172849,-117.204154],[33.171578,-117.203571],[33.168968,-117.204798],[33.166673,-117.205554],[33.16546,-117.204296],[33.164674,-117.200722],[33.163463,-117.199473],[33.161001,-117.199417],[33.158116,-117.198569],[33.15049,-117.192275],[33.146977,-117.185416],[33.146725,-117.184309],[33.145441,-117.175104],[33.141957,-117.160675],[33.1409,-117.15849],[33.134816,-117.156075],[33.134516,-117.154611],[33.135045,-117.152559],[33.137254,-117.147746],[33.137888,-117.143712],[33.138521,-117.140892],[33.139538,-117.139377],[33.138553,-117.136825],[33.138115,-117.133482],[33.134088,-117.128199],[33.131112,-117.124154],[33.12894,-117.120438],[33.123105,-117.104663],[33.122409,-117.102761],[33.118992,-117.09359],[33.118419,-117.092161]],[[33.190875,-117.378349],[33.182082,-117.37084],[33.181639,-117.369383],[33.181867,-117.368346],[33.18275,-117.366887],[33.185269,-117.365226],[33.188694,-117.363975],[33.190203,-117.36218],[33.194614,-117.353513],[33.197071,-117.348249],[33.199644,-117.337676],[33.199657,-117.332476],[33.200435,-117.326393],[33.20038,-117.3223],[33.201059,-117.314233],[33.202057,-117.308089],[33.203143,-117.29219],[33.204897,-117.287222],[33.208804,-117.278456],[33.20965,-117.274553],[33.211444,-117.270624],[33.213272,-117.269896],[33.218876,-117.262228],[33.219698,-117.258186],[33.219216,-117.255911],[33.217863,-117.254598],[33.212532,-117.253552],[33.206696,-117.251897],[33.205783,-117.249947],[33.204847,-117.246373],[33.202992,-117.244863],[33.197315,-117.241041],[33.194261,-117.238025],[33.191371,-117.237829],[33.190535,-117.237477],[33.189873,-117.236115],[33.19028,-117.234051],[33.190103,-117.230312],[33.189652,-117.22866],[33.187954,-117.227128],[33.185665,-117.225389],[33.183887,-117.223513],[33.182377,-117.218446],[33.179048,-117.216001],[33.173947,-117.209235],[33.173499,-117.207393],[33.173251,-117.204743],[33.171919,-117.203608],[33.170056,-117.204169],[33.167129,-117.205631],[33.165617,-117.20464],[33.164852,-117.201148],[33.163879,-117.199752],[33.162088,-117.199253],[33.158827,-117.198995],[33.152036,-117.194272],[33.147036,-117.185658],[33.146924,-117.18518],[33.145826,-117.178091],[33.141957,-117.160675],[33.141486,-117.158803],[33.135144,-117.156349],[33.134431,-117.155006],[33.134771,-117.153585],[33.136658,-117.148796],[33.137772,-117.145697],[33.138196,-117.141444],[33.139464,-117.139716],[33.138899,-117.137727],[33.138268,-117.134085],[33.135435,-117.129702],[33.131112,-117.124154],[33.129146,-117.120875],[33.123555,-117.105872],[33.122479,-117.102942],[33.119753,-117.095664],[33.118419,-117.092161]]]}};
+    const routeInfo = {
+      '398': { color: '#2563eb', name: 'COASTER' },
+      '399': { color: '#059669', name: 'SPRINTER' }
     };
+    const map = L.map('map', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    let layer;
 
-    let activeCommute = null;
-    let refreshInterval = null;
-    let cachedRoot = null;
-
-    async function loadSchema() {
-      if (cachedRoot) return cachedRoot;
-      cachedRoot = await protobuf.load(PROTO_URL);
-      return cachedRoot;
+    function directionLabel(routeId, directionId) {
+      return routeId === '398' ? (directionId === 0 ? 'Northbound — Oceanside' : 'Southbound — San Diego') : (directionId === 0 ? 'Eastbound — Escondido' : 'Westbound — Oceanside');
     }
 
-    function selectCommute(id) {
-      activeCommute = commutes[id];
-      
-      // Update UI active states
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.getAttribute('onclick').includes(id)) {
-          btn.classList.add('active');
-        }
-      });
-
-      document.getElementById('route-info').innerText = activeCommute.name;
-      document.getElementById('board').innerHTML = '<div class="loading"><div class="spinner"></div><br>Fetching live data...</div>';
-      
-      fetchTrains();
-      
-      if (refreshInterval) clearInterval(refreshInterval);
-      refreshInterval = setInterval(fetchTrains, 60000);
-    }
-
-    async function fetchTrains() {
-      if (!activeCommute) return;
-      
-      const board = document.getElementById('board');
-      
+    async function loadPredictions(stop, popup) {
+      const content = popup.getElement()?.querySelector('.prediction');
+      if (!content) return;
       try {
-        let root;
-        try {
-          root = await loadSchema();
-        } catch (e) {
-          throw new Error('Schema load failed: ' + e.message);
-        }
-        
-        const FeedMessage = root.lookupType("transit_realtime.FeedMessage");
+        const response = await fetch(apiUrl(`/api/predictions?stopIds=${encodeURIComponent(stop.ids.join(','))}`));
+        if (!response.ok) throw new Error('Prediction feed unavailable');
+        const { predictions } = await response.json();
+        const nextByDirection = new Map();
+        predictions.forEach((prediction) => {
+          const key = `${prediction.routeId}-${prediction.directionId}`;
+          if (!nextByDirection.has(key)) nextByDirection.set(key, prediction);
+        });
+        const next = [...nextByDirection.values()].sort((a, b) => a.timestamp - b.timestamp);
+        content.innerHTML = next.length ? next.map((prediction) => {
+          const minutes = Math.max(0, Math.round((prediction.timestamp - Date.now()) / 60000));
+          return `<div><strong>${directionLabel(prediction.routeId, prediction.directionId)}</strong><br>${minutes === 0 ? 'Due now' : `${minutes} min`}</div>`;
+        }).join('<hr>') : 'No live arrivals are currently reported for this station.';
+      } catch { content.textContent = 'Live arrival times are temporarily unavailable.'; }
+    }
+    function showRoute(routeId) {
+      const route = routes[routeId];
+      const info = routeInfo[routeId];
+      if (layer) map.removeLayer(layer);
+      layer = L.featureGroup().addTo(map);
+      route.lines.forEach((line) => L.polyline(line, { color: info.color, weight: 5, opacity: .85 }).addTo(layer));
+      route.stops.forEach((stop) => L.circleMarker([stop.lat, stop.lon], {
+        radius: 5, color: '#fff', weight: 2, fillColor: info.color, fillOpacity: 1
+      }).bindPopup(`<strong>${stop.name}</strong><br><span class="prediction">Loading next trains…</span>`).on('popupopen', (event) => loadPredictions(stop, event.target.getPopup())).addTo(layer));
+      map.fitBounds(layer.getBounds(), { padding: [28, 28], maxZoom: 12 });
+      document.querySelectorAll('[data-route]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.route === routeId)));
+    }
 
-        let response;
-        try {
-          // Attempt fetch with cors-anywhere
-          response = await fetch(FETCH_URL);
-        } catch (e) {
-          throw new Error('Network request blocked. Ensure proxy is unlocked.');
-        }
-        
-        if (response.status === 403) {
-          board.innerHTML = `
-            <div class="flex flex-col items-center justify-center p-8 text-center text-red-400">
-              <svg class="w-12 h-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-              <h2 class="text-xl font-bold text-white mb-2">CORS Proxy Locked</h2>
-              <p class="mb-4">MTS blocks public traffic, so we must use a proxy. You need to temporarily unlock it.</p>
-              <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4 shadow-lg transition-transform transform hover:scale-105">
-                1. Click Here to Unlock Proxy
-              </a>
-              <p class="text-sm opacity-80">Click the button on that page, then return here and refresh!</p>
-            </div>
-          `;
-          return;
-        }
-        
-        if (!response.ok) {
-          throw new Error(`GTFS response not ok: ${response.status} ${response.statusText}`);
-        }
-        
-        const buffer = await response.arrayBuffer();
+    document.querySelectorAll('[data-route]').forEach((button) => button.addEventListener('click', () => showRoute(button.dataset.route)));
+    const trainLayer = L.featureGroup().addTo(map);
+    const status = document.getElementById('status');
+    const trainIcon = (color, bearing) => L.divIcon({
+      className: '',
+      html: `<span style="display:block;width:22px;height:22px;border-radius:50% 50% 50% 0;background:${color};border:2px solid white;box-shadow:0 1px 4px #555;transform:rotate(${bearing || 0}deg)"></span>`,
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
 
-        const message = FeedMessage.decode(new Uint8Array(buffer));
-        const data = FeedMessage.toObject(message, { enums: String, defaults: true });
-
-        displayTrains(data.entity);
-      } catch (error) {
-        board.innerHTML = `<div class="error">⚠️ Failed to load data: ${error.message}</div>`;
+    async function loadVehicles() {
+      try {
+        const response = await fetch(apiUrl('/api/vehicles'));
+        if (!response.ok) throw new Error('Vehicle feed unavailable');
+        const { vehicles, fetchedAt } = await response.json();
+        trainLayer.clearLayers();
+        const visible = vehicles.filter((vehicle) => vehicle.routeId === document.querySelector('[aria-pressed="true"]').dataset.route);
+        visible.forEach((vehicle) => {
+          const color = routeInfo[vehicle.routeId].color;
+          L.marker([vehicle.latitude, vehicle.longitude], { icon: trainIcon(color, vehicle.bearing) })
+            .bindPopup(`<strong>${routeInfo[vehicle.routeId].name}</strong><br>${vehicle.label}<br>${vehicle.speedMph} mph`)
+            .addTo(trainLayer);
+        });
+        status.textContent = `${visible.length} live train${visible.length === 1 ? '' : 's'} · updated ${new Date(fetchedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+      } catch {
+        status.textContent = 'Live train positions temporarily unavailable';
       }
     }
 
-    function displayTrains(entities) {
-      const board = document.getElementById('board');
-      board.innerHTML = '';
-      const currentUnixTime = Math.floor(Date.now() / 1000);
-      let trainsFound = [];
+    const selectRoute = showRoute;
+    showRoute = function(routeId) { selectRoute(routeId); loadVehicles(); };
+    setInterval(loadVehicles, 30000);
+    let installPrompt;
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      installPrompt = event;
+      document.getElementById('install').hidden = false;
+    });
+    document.getElementById('install').addEventListener('click', async () => {
+      if (!installPrompt) return;
+      await installPrompt.prompt();
+      installPrompt = undefined;
+      document.getElementById('install').hidden = true;
+    });
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 
-      entities.forEach(entity => {
-        if (entity.tripUpdate && entity.tripUpdate.trip.routeId === activeCommute.route) {
-          const stopUpdate = entity.tripUpdate.stopTimeUpdate.find(stop => stop.stopId === activeCommute.stop);
-          if (stopUpdate && stopUpdate.arrival) {
-            const arrivalTime = stopUpdate.arrival.time;
-            const minutesAway = Math.max(0, Math.floor((arrivalTime - currentUnixTime) / 60));
-            if (minutesAway >= 0) {
-              trainsFound.push(minutesAway);
-            }
-          }
-        }
-      });
-
-      trainsFound.sort((a, b) => a - b);
-
-      if (trainsFound.length === 0) {
-        board.innerHTML = '<div class="error">No upcoming trains found for this route.</div>';
-        return;
-      }
-
-      trainsFound.forEach((minutes, index) => {
-        const div = document.createElement('div');
-        div.className = 'train-card';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-          <div class="route-name">Departing in</div>
-          <div class="time">${minutes} <span>min</span></div>
-        `;
-        board.appendChild(div);
-      });
-    }
-
-    // Default to the first one (Morning COASTER)
-    selectCommute('coaster_am');
+    showRoute('398');
   </script>
 </body>
 </html>
